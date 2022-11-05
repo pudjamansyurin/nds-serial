@@ -5,6 +5,7 @@
 - USART TX and RX can run in parallel.
 - USART-RX line using intterupt mode (non-blocking)
 - USART-TX line using polling mode (blocking)
+- Optional stdout locking mechanism.
 
 #### **`main.c`**
 ```c
@@ -19,10 +20,10 @@ extern void delay(uint64_t ms);
 extern NDS_DRIVER_USART Driver_USART1;
 
 /* private variables */
-static char usart_buffer[512];
+static char stdin_buffer[512];
 
 /* private function definition */
-static void usart_reader(void *p_buffer, uint16_t u16_cnt)
+static void stdin_reader(void *p_buffer, uint16_t u16_cnt)
 {
     /* do something with received data */
 }
@@ -33,8 +34,8 @@ int main(void)
 	uint8_t u8_cntr = 0;
 
 	/* initialize terminal */
-	serial_init(&Driver_USART1, 38400);
-	serial_start(usart_reader, usart_buffer, sizeof(usart_buffer));
+	serial_init(&Driver_USART1, 38400, NULL);
+	serial_start(stdin_reader, stdin_buffer, sizeof(stdin_buffer));
 
 	/* send directly to serial */
 	char* p_text = "hello world\n";

@@ -13,13 +13,16 @@
 static serial_t hserial;
 
 /* private function declarations */
-static int32_t serial_listen(void);
+static void stdout_locker(uint8_t u8_lock);
+static int32_t stdin_listen(void);
 static void usart_callback(uint32_t u32_event);
 
 /* public function implementations */
-void serial_init(NDS_DRIVER_USART *p_usart, uint32_t u32_baud)
+void serial_init(NDS_DRIVER_USART *p_usart, uint32_t u32_baud,
+		stdout_locker_t locker)
 {
 	hserial.p_usart = p_usart;
+	hserial.locker = locker;
 
 	// initialize the USART driver
 	p_usart->Initialize(usart_callback);
@@ -40,13 +43,13 @@ void serial_init(NDS_DRIVER_USART *p_usart, uint32_t u32_baud)
 	p_usart->Control(NDS_USART_CONTROL_RX, 1);
 }
 
-int32_t serial_start(serial_reader_t reader, void* p_buffer, uint16_t u16_size)
+int32_t serial_start(stdin_reader_t reader, void* p_buffer, uint16_t u16_size)
 {
 	hserial.reader = reader;
-	hserial.p_rxBuffer = p_buffer;
-	hserial.u16_rxSize = u16_size;
+	hserial.rx.p_buffer = p_buffer;
+	hserial.rx.u16_size = u16_size;
 
-	return (serial_listen());
+	return (stdin_listen());
 }
 
 
@@ -56,6 +59,8 @@ int32_t serial_write(const void *p_buffer, uint32_t u32_cnt)
 	int32_t s32_rc;
 
 	p_usart = hserial.p_usart;
+
+	stdout_locker(1);
 
 	s32_rc = p_usart->Send(p_buffer, u32_cnt);
 
@@ -72,12 +77,22 @@ int32_t serial_write(const void *p_buffer, uint32_t u32_cnt)
 		}
 	}
 
+	stdout_locker(0);
+
 	return (s32_rc);
 }
 
 
 /* private function implementations */
-static int32_t serial_listen(void)
+static void stdout_locker(uint8_t u8_lock)
+{
+	if (NULL != hserial.locker)
+	{
+		hserial.locker(u8_lock);
+	}
+}
+
+static int32_t stdin_listen(void)
 {
 	NDS_DRIVER_USART *p_usart;
 	uint32_t u32_inCnt;
@@ -101,12 +116,12 @@ static int32_t serial_listen(void)
 	u32_inCnt = p_usart->GetRxCount();
 	if (0 < u32_inCnt)
 	{
-		hserial.reader(hserial.p_rxBuffer, u32_inCnt);
-		memset(hserial.p_rxBuffer, 0x0, u32_inCnt);
+		hserial.reader(hserial.rx.p_buffer, u32_inCnt);
+		memset(hserial.rx.p_buffer, 0x0, u32_inCnt);
 	}
 
 	/* start listening */
-	s32_rc = p_usart->Receive(hserial.p_rxBuffer, hserial.u16_rxSize);
+	s32_rc = p_usart->Receive(hserial.rx.p_buffer, hserial.rx.u16_size);
 
 	return (s32_rc);
 }
@@ -120,11 +135,11 @@ static void usart_callback(uint32_t u32_event)
 
 		case NDS_USART_EVENT_RECEIVE_COMPLETE:
 		case NDS_USART_EVENT_RX_BREAK:
-			serial_listen();
+			stdin_listen();
 			break;
 
 		case NDS_USART_EVENT_TRANSFER_COMPLETE:
-			serial_listen();
+			stdin_listen();
 			break;
 
 		case NDS_USART_EVENT_RX_TIMEOUT:
@@ -132,7 +147,7 @@ static void usart_callback(uint32_t u32_event)
 		case NDS_USART_EVENT_RX_PARITY_ERROR:
 		case NDS_USART_EVENT_RX_OVERFLOW:
 		case NDS_USART_EVENT_TX_UNDERFLOW:
-			serial_listen();
+			stdin_listen();
 	        break;
 	}
 }
