@@ -9,8 +9,6 @@
 
 #### **`main.c`**
 ```c
-#include "ae210p.h"
-#include "usart_ae210p.h"
 #include "nds-serial/serial.h"
 #include <string.h>
 #include <stdio.h>
@@ -25,7 +23,9 @@ static char stdin_buffer[512];
 /* private function definition */
 static void stdin_reader(void *p_buffer, uint16_t u16_cnt)
 {
-    /* do something with received data */
+	/* do something with received data */
+	/* replace with flag or queue message */
+	/* as this is still in interrupt context call */
 }
 
 /* public function definition */

@@ -129,8 +129,8 @@ static int32_t stdin_listen(void)
 static void usart_callback(uint32_t u32_event)
 {
 	switch (u32_event) {
-		case NDS_USART_EVENT_TX_COMPLETE:
-		case NDS_USART_EVENT_SEND_COMPLETE:
+		case NDS_USART_EVENT_TRANSFER_COMPLETE:
+			stdin_listen();
 			break;
 
 		case NDS_USART_EVENT_RECEIVE_COMPLETE:
@@ -138,16 +138,18 @@ static void usart_callback(uint32_t u32_event)
 			stdin_listen();
 			break;
 
-		case NDS_USART_EVENT_TRANSFER_COMPLETE:
-			stdin_listen();
-			break;
-
 		case NDS_USART_EVENT_RX_TIMEOUT:
 		case NDS_USART_EVENT_RX_FRAMING_ERROR:
 		case NDS_USART_EVENT_RX_PARITY_ERROR:
 		case NDS_USART_EVENT_RX_OVERFLOW:
-		case NDS_USART_EVENT_TX_UNDERFLOW:
 			stdin_listen();
+	        break;
+            
+		case NDS_USART_EVENT_TX_COMPLETE:
+		case NDS_USART_EVENT_SEND_COMPLETE:
+			break;
+
+		case NDS_USART_EVENT_TX_UNDERFLOW:
 	        break;
 	}
 }
