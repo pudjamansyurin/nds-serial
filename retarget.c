@@ -23,7 +23,9 @@ void nds_write(const unsigned char *buf, int size)
 struct stat;
 int _fstat(int fd, struct stat *buf)
 {
-	return 0;
+    (void) fd;
+    (void) buf;
+    return 0;
 }
 
 int _write(int __fd, const void *__buf, int __nbyte)
