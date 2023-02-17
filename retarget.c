@@ -7,6 +7,8 @@
 
 #include "serial.h"
 
+
+/* overridden stdlib functions ---------------------------------------------- */
 #undef putchar
 inline int putchar(int c)
 {
